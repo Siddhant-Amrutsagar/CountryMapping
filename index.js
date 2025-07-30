@@ -94,7 +94,7 @@ return allPlaces.map(cleanPlaceName);
 
 async function fetchAndProcessAddresses() {
     const resultSet = await client.query({
-        query: `SELECT domainid, fulladdress FROM addresses where match(fulladdress, 'india') LIMIT 10 offset 200`,
+        query: `SELECT domainid, fulladdress FROM addresses LIMIT 10`,
         format: 'JSONEachRow'
     });
 
@@ -119,11 +119,11 @@ async function fetchAndProcessAddresses() {
         const countryScore = {}; // { India: 3, Brazil: 1, ... }
 
         for (const place of allPlaces) {
-            const normalizedPlace = place.trim().toLowerCase().replace(/'/g, "''");
+            //const normalizedPlace = place.trim().toLowerCase().replace(/'/g, "''");
 
             const query = `
-        SELECT country FROM places_Countries WHERE lower(name) = '${normalizedPlace}'
-    `;
+                SELECT country FROM places_Countries WHERE name ILIKE '${place.replace(/'/g, "''")}'    
+                `;
             const result = await client.query({ query, format: 'JSONEachRow' });
             const rows = await result.json();
 
