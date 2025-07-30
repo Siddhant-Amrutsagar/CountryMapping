@@ -39,16 +39,28 @@ function extractPlacesWithFallback(address) {
     }
 
     const cityRegex = /\b[A-Z][a-z]+(?:\s[A-Z][a-z]+)?\b/g;
-    const junkWords = /^(PO|P\.O\.|Box|Post|Office|Suite|Street|St|Avenue|Ave|Blvd|Dr|Drive|Unit|Floor|Zip|Code|Phone|Mobile|Toll-Free|Toll|Email|email|E-mail|e-mail|Road|road|Rd|rd|Wing|wing|Flat No|Flat no|Line|line|Sec|sec|Sector|sector|Mr|mr|Mr\.|mr\.|Ms|ms|Ms\.|ms\.|Miss|miss|North|north|South|south|East|east|West|west|\d+)$/i;
+    const junkWords = /^(PO|P\.O\.|Box|Post|Office|Suite|Street|St|Avenue|Ave|Blvd|Dr|Drive|Unit|Floor|Zip|Code|Phone|Mobile|Toll-Free|Toll|Email|email|E-mail|e-mail|Road|road|Rd|rd|Wing|wing|Flat No|Flat no|Line|line|Sec|sec|Sector|sector|Mr|mr|Mr\.|mr\.|Ms|ms|Ms\.|ms\.|Miss|miss|North|north|South|south|East|east|est|Wst|wst|Est|West|west|\d+)$/i;
     const junkPhrases = /^(PO|PO Box|P\.O\. Box|Post Office Box| SE)$/i;
+
+    for (const place of compromisePlaces) {
+        const components = place.split(/[,\s]+/).map(w => w.trim()).filter(Boolean);
+        for (const part of components) {
+            if (!junkWords.test(part) && part.length > 2) {
+                fallbackPlaces.push(part);
+            }
+        }
+        if (!junkPhrases.test(place) && place.length > 2) {
+            fallbackPlaces.push(place);
+        }
+    }
 
     while ((match = cityRegex.exec(cleaned)) !== null) {
         const phrase = match[0];
         console.log("phrase: ", phrase);
-        
-        const words = phrase.split(/\s+/);
+
+        const words = phrase.split(/\s+/).map(w => w.trim()).filter(Boolean);
         console.log("words: ", words);
-        
+
         const filteredWords = words.filter(w => !junkWords.test(w));
 
         if (filteredWords.length === 0) continue;
@@ -69,19 +81,17 @@ function extractPlacesWithFallback(address) {
     }
 
 
+    // Add short codes like "MN", "NY", etc.
+    const ignoredCodes = new Set(['PO', 'BOX', 'PIN', 'ZIP', 'FAX', 'TEL', 'SE']);
+    const codeRegex = /\b[A-Z]{2,3}\b/g;
+    while ((match = codeRegex.exec(cleaned)) !== null) {
+        const code = match[0];
+        console.log("code: ", code);
 
-
-// Add short codes like "MN", "NY", etc.
-const ignoredCodes = new Set(['PO', 'BOX', 'PIN', 'ZIP', 'FAX', 'TEL']);
-const codeRegex = /\b[A-Z]{2,3}\b/g;
-while ((match = codeRegex.exec(cleaned)) !== null) {
-    const code = match[0];
-    console.log("code: ", code);
-    
-    if (!ignoredCodes.has(code)) {
-        fallbackPlaces.push(code);
+        if (!ignoredCodes.has(code)) {
+            fallbackPlaces.push(code);
+        }
     }
-}
 
 const allPlaces = [...new Set([
     ...compromisePlaces,
